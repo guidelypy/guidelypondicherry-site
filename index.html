@@ -160,6 +160,15 @@ footer a{color:#fff;text-decoration:none;font-weight:600}
 .mbar .btn{flex:1;padding:13px 4px}
 @keyframes ring{0%{box-shadow:0 0 0 0 rgba(245,183,0,.75)}70%{box-shadow:0 0 0 16px rgba(245,183,0,0)}100%{box-shadow:0 0 0 0 rgba(245,183,0,0)}}
 @keyframes wiggle{0%,80%,100%{transform:rotate(0)}85%{transform:rotate(-14deg)}90%{transform:rotate(14deg)}95%{transform:rotate(-8deg)}}
+/* Admission enquiry pop-up for Meta ad visitors */
+.gp-modal{position:fixed;inset:0;z-index:100;background:rgba(30,10,40,.72);display:flex;align-items:center;justify-content:center;padding:14px;animation:gpfade .25s ease}
+.gp-modal .gp-box{width:100%;max-width:440px;max-height:94vh;overflow:auto;border-radius:18px}
+.gp-modal .gp-box .form{margin:0;width:100%;max-width:none}
+.gp-skip{display:block;margin:10px auto 0;background:none;border:0;color:#EBD9F2;font:500 14px/1.4 inherit;text-decoration:underline;cursor:pointer}
+.gp-cont{display:none;margin-top:12px}
+body.gp-lock{overflow:hidden}
+body.gp-lock .callfab,body.gp-lock .wafab,body.gp-lock .mbar{display:none!important}
+@keyframes gpfade{from{opacity:0}to{opacity:1}}
 @media (max-width:760px){nav,.hide-sm{display:none}.mbar{display:flex}.wafab{bottom:136px}header .wrap{padding:0 16px}}
 </style>
 </head>
@@ -209,6 +218,7 @@ footer a{color:#fff;text-decoration:none;font-weight:600}
 <a class="btn btn-y" id="tMock" href="#" target="_blank" rel="noopener" style="display:none">Start your free mock test</a>
 <a class="btn btn-y" id="tPdf" href="#" target="_blank" rel="noopener" style="display:none">Download your free PDF</a>
 <p class="small">Visit us any day, 7:30 AM – 8 PM, Kamaraj Salai.</p>
+<button type="button" class="btn btn-p gp-cont" id="gpCont">Continue to website</button>
 </div>
 </div>
 </div>
@@ -418,6 +428,42 @@ footer a{color:#fff;text-decoration:none;font-weight:600}
       .then(done)
       .catch(function () { cta.disabled = false; cta.textContent = CTAS[leadType]; err.textContent = 'Could not send. Please call +91 89036 81196.'; });
   });
+})();
+</script>
+<script>
+/* Admission enquiry pop-up: only for visitors from Meta ads, once per visit */
+(function(){
+  var q=new URLSearchParams(location.search), src=(q.get('utm_source')||'').toLowerCase();
+  var fromMeta=q.get('fbclid')||/^(meta|facebook|fb|instagram|ig)$/.test(src);
+  if(!fromMeta) return;
+  try{ if(sessionStorage.getItem('gpPopupDone')) return; }catch(e){}
+  var card=document.getElementById('enquire'); if(!card) return;
+  var home=document.createComment('enquire-home'), head=card.querySelector('.form-h'), headTxt=head?head.textContent:'';
+  var modal, cont=document.getElementById('gpCont'), thanks=document.getElementById('thanks');
+  function done(){ try{sessionStorage.setItem('gpPopupDone','1');}catch(e){} }
+  function close(why){
+    if(!modal) return;
+    home.parentNode.insertBefore(card,home); home.parentNode.removeChild(home);
+    if(head) head.textContent=headTxt; if(cont) cont.style.display='none';
+    modal.remove(); modal=null; document.body.classList.remove('gp-lock'); done();
+    if(window.gpTrack) gpTrack(why==='skip'?'popup_skip':'popup_continue');
+  }
+  setTimeout(function(){
+    if(thanks && thanks.style.display==='flex') return;
+    card.parentNode.insertBefore(home,card);
+    modal=document.createElement('div'); modal.className='gp-modal'; modal.setAttribute('role','dialog'); modal.setAttribute('aria-modal','true'); modal.setAttribute('aria-label','Admission Enquiry');
+    var box=document.createElement('div'); box.className='gp-box'; box.appendChild(card);
+    var skip=document.createElement('button'); skip.type='button'; skip.className='gp-skip'; skip.textContent='Skip for now';
+    skip.onclick=function(){ close('skip'); };
+    box.appendChild(skip); modal.appendChild(box); document.body.appendChild(modal);
+    if(head) head.textContent='Admission Enquiry';
+    document.body.classList.add('gp-lock');
+    if(window.gpTrack) gpTrack('popup_shown');
+    if(thanks && window.MutationObserver) new MutationObserver(function(){
+      if(thanks.style.display==='flex'){ done(); skip.style.display='none'; if(cont) cont.style.display='block'; }
+    }).observe(thanks,{attributes:true,attributeFilter:['style']});
+    if(cont) cont.onclick=function(){ close('continue'); };
+  },1500);
 })();
 </script>
 </body>
