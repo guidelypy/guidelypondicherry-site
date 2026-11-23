@@ -22,6 +22,7 @@
 /* ===== Settings: fill these in, then redeploy ===== */
 window.GP = {
   LEADS_URL: 'https://script.google.com/macros/s/AKfycbxHGke4xtuwUrApxndlIKxdJcSQbmigvAEkRlr6-XOehjpKs1qL41awG57IBQPoWvgF/exec',          // Google Apps Script web app URL (Master Lead Sheet)
+  GA4_ID: 'G-ZF6L5EZHW1', // Google Analytics 4 measurement ID
   GTM_ID: '',             // Google Tag Manager container ID, e.g. GTM-ABC1234
   CALL: '+918903681196',
   WHATSAPP: '918903681124',
@@ -29,6 +30,17 @@ window.GP = {
   PDF_URL: 'https://cdn.guidely.in/pdf/179399860273.pdf'
 };
 window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+if (GP.GA4_ID) {
+  gtag('js', new Date()); gtag('config', GP.GA4_ID);
+  (function(){var j=document.createElement('script');j.async=true;j.src='https://www.googletagmanager.com/gtag/js?id='+GP.GA4_ID;document.head.appendChild(j);})();
+}
+/* send every key action to GA4 (and Tag Manager if added) */
+window.gpTrack = function (name, params) {
+  params = params || {};
+  window.dataLayer.push(Object.assign({ event: name }, params));
+  if (GP.GA4_ID) gtag('event', name, params);
+};
 if (GP.GTM_ID) {
   (function(w,d,s,l,i){w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',GP.GTM_ID);
 }
@@ -367,7 +379,7 @@ footer a{color:#fff;text-decoration:none;font-weight:600}
     var a = e.target.closest('[data-pick]');
     if (a) pick(a.getAttribute('data-pick'), a.getAttribute('data-exam'));
     var t = e.target.closest('[data-track]');
-    if (t) window.dataLayer.push({ event: t.getAttribute('data-track') });
+    if (t) gpTrack(t.getAttribute('data-track'));
   });
 
   var wa = document.getElementById('waFab');
@@ -383,7 +395,7 @@ footer a{color:#fff;text-decoration:none;font-weight:600}
     var data = Object.assign({ name: name, mobile: mobile, exam: form.exam.value, leadType: leadType, page: location.href.split('#')[0],
       device: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop' }, track);
     var done = function () {
-      window.dataLayer.push({ event: 'generate_lead', lead_type: leadType, exam: data.exam });
+      gpTrack('generate_lead', { lead_type: leadType, exam: data.exam });
       document.getElementById('tName').textContent = name;
       document.getElementById('tType').textContent = leadType + ' (' + data.exam + ')';
       document.getElementById('tMock').style.display = leadType === 'Free mock test' ? 'block' : 'none';
