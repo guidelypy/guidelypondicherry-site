@@ -23,6 +23,7 @@
 window.GP = {
   LEADS_URL: 'https://script.google.com/macros/s/AKfycbxHGke4xtuwUrApxndlIKxdJcSQbmigvAEkRlr6-XOehjpKs1qL41awG57IBQPoWvgF/exec',          // Google Apps Script web app URL (Master Lead Sheet)
   GA4_ID: 'G-ZF6L5EZHW1', // Google Analytics 4 measurement ID
+  META_PIXEL_ID: '1174021987976077', // Meta dataset "Guidely_leads"
   GTM_ID: '',             // Google Tag Manager container ID, e.g. GTM-ABC1234
   CALL: '+918903681196',
   WHATSAPP: '918903681124',
@@ -35,11 +36,17 @@ if (GP.GA4_ID) {
   gtag('js', new Date()); gtag('config', GP.GA4_ID);
   (function(){var j=document.createElement('script');j.async=true;j.src='https://www.googletagmanager.com/gtag/js?id='+GP.GA4_ID;document.head.appendChild(j);})();
 }
-/* send every key action to GA4 (and Tag Manager if added) */
+if (GP.META_PIXEL_ID) {
+  !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
+  fbq('init', GP.META_PIXEL_ID); fbq('track', 'PageView');
+}
+var META_MAP = { generate_lead: 'Lead', call_click: 'Contact', whatsapp_click: 'Contact' };
+/* send every key action to GA4, Meta Pixel (and Tag Manager if added) */
 window.gpTrack = function (name, params) {
   params = params || {};
   window.dataLayer.push(Object.assign({ event: name }, params));
   if (GP.GA4_ID) gtag('event', name, params);
+  if (GP.META_PIXEL_ID && window.fbq && META_MAP[name]) fbq('track', META_MAP[name], Object.assign({ content_name: name }, params));
 };
 if (GP.GTM_ID) {
   (function(w,d,s,l,i){w[l].push({'gtm.start':new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],j=d.createElement(s);j.async=true;j.src='https://www.googletagmanager.com/gtm.js?id='+i;f.parentNode.insertBefore(j,f);})(window,document,'script','dataLayer',GP.GTM_ID);
